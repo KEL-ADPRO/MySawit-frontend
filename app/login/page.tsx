@@ -10,12 +10,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
+    e?.preventDefault();
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch("http://localhost:8081/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -57,7 +57,7 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button type="submit">Masuk</button>
+        <button type="button" onClick={handleSubmit}>Masuk</button>
       </form>
 
       <p>Belum punya akun? <Link href="/register">Daftar</Link></p>
