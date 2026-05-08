@@ -17,6 +17,7 @@ import {
   Eye,
   Filter,
   HelpCircle,
+  Home,
   Info,
   Landmark,
   LayoutDashboard,
@@ -29,10 +30,12 @@ import {
   Send,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   Sprout,
   Tractor,
   TrendingUp,
   Truck,
+  User,
   UserPlus,
   Users,
   X,
@@ -119,9 +122,9 @@ const initialWageConfigForm: WageConfigForm = {
 };
 
 const statusTabs: Array<{ value: "ALL" | PayrollStatus; label: string }> = [
-  { value: "ALL", label: "Semua Status" },
-  { value: "ACCEPTED", label: "Selesai" },
-  { value: "PENDING", label: "Menunggu" },
+  { value: "ALL", label: "Semua" },
+  { value: "ACCEPTED", label: "Disetujui" },
+  { value: "PENDING", label: "Pending" },
   { value: "REJECTED", label: "Ditolak" },
 ];
 
@@ -650,6 +653,7 @@ export function PaymentExperience({ page }: { page: PaymentPageKind }) {
         applyFilters={applyPayrollFilters}
         endDate={endDate}
         onApprovePayroll={handleApprovePayroll}
+        onCreatePayroll={() => setCreatePayrollOpen(true)}
         onOpenDetail={setSelectedPayroll}
         onOpenReject={(payroll) => {
           setRejectPayroll(payroll);
@@ -690,6 +694,7 @@ export function PaymentExperience({ page }: { page: PaymentPageKind }) {
         applyFilters={applyPayrollFilters}
         onStatusChange={setStatusFilter}
         endDate={endDate}
+        onOpenDetail={setSelectedPayroll}
         payrollError={payrollError}
         payrollLoading={payrollLoading}
         payrolls={visiblePayrolls}
@@ -780,6 +785,8 @@ function PaymentShell({
 
   return (
     <div className="payment-app">
+      <MobileHeader page={page} />
+
       <aside className="payment-sidebar">
         <Link className="brand" href="/">
           <span className="brand-icon">
@@ -873,10 +880,92 @@ function PaymentShell({
           </div>
         </header>
 
-        <main className="content-shell">{children}</main>
+        <main className={`content-shell page-${page}`}>{children}</main>
       </div>
+
+      <MobileBottomNav page={page} />
     </div>
   );
+}
+
+function MobileHeader({ page }: { page: PaymentPageKind }) {
+  const title = mobilePageTitle(page);
+  const backHref = page === "dashboard" ? "/" : page === "top-up" ? "/" : "/";
+
+  return (
+    <header className="mobile-appbar">
+      <Link
+        aria-label={page === "top-up" ? "Tutup" : "Kembali"}
+        className="mobile-appbar-icon"
+        href={backHref}
+      >
+        {page === "top-up" ? <X size={26} /> : <ArrowLeft size={28} />}
+      </Link>
+      <h1>{title}</h1>
+      <div className="mobile-appbar-action">
+        {page === "tarif" ? (
+          <button className="mobile-save-button" form="wage-config-form" type="submit">
+            Simpan
+          </button>
+        ) : page === "payroll" ? (
+          <button aria-label="Filter payroll" className="mobile-appbar-icon" type="button">
+            <SlidersHorizontal size={25} />
+          </button>
+        ) : page === "dashboard" || page === "payroll-saya" ? (
+          <button aria-label="Notifikasi" className="mobile-appbar-icon" type="button">
+            <Bell size={25} />
+            <span className="notification-dot" />
+          </button>
+        ) : null}
+      </div>
+    </header>
+  );
+}
+
+function MobileBottomNav({ page }: { page: PaymentPageKind }) {
+  const activePayroll = ["payroll", "payroll-saya", "top-up"].includes(page);
+
+  return (
+    <nav className={`mobile-bottom-nav page-${page}`} aria-label="Navigasi utama mobile">
+      <Link className={page === "dashboard" ? "active" : ""} href="/">
+        <Home size={25} />
+        <span>Beranda</span>
+      </Link>
+      <a href="#">
+        <Users size={25} />
+        <span>Pengguna</span>
+      </a>
+      <a href="#">
+        <Sprout size={25} />
+        <span>Kebun</span>
+      </a>
+      <Link className={activePayroll ? "active" : ""} href="/payroll">
+        <Banknote size={28} />
+        <span>Payroll</span>
+      </Link>
+      <a href="#">
+        <User size={25} />
+        <span>Profil</span>
+      </a>
+    </nav>
+  );
+}
+
+function mobilePageTitle(page: PaymentPageKind) {
+  switch (page) {
+    case "dashboard":
+      return "Wallet Saya";
+    case "tarif":
+      return "Pengaturan Tarif Upah";
+    case "payroll":
+      return "Manajemen Payroll";
+    case "top-up":
+      return "Top Up Saldo";
+    case "payroll-saya":
+      return "Payroll Saya";
+    default:
+      return "MySawit";
+  }
 }
 
 function SidebarLink({
@@ -935,82 +1024,50 @@ function DashboardPage({
 }) {
   return (
     <>
-      <section className="dashboard-hero-grid">
-        <div className="balance-card">
-          <div className="balance-card-top">
-            <span className="balance-kicker">
-              <Landmark size={28} />
-              Saldo Dompet Admin
-            </span>
-            <span className="status-chip green">Aktif</span>
-          </div>
-          <div className="balance-value">
-            <span>$</span>
-            {walletLoading ? "..." : formatSawitDollar(walletBalance)}
-          </div>
-          <p>
-            Setara <strong>{formatRupiah(walletBalance * SAWIT_DOLLAR_RATE)}</strong>
-            <Info size={15} />
-          </p>
+      <section className="mobile-wallet-view">
+        <div className="mobile-balance-card">
+          <span>Total Saldo Aktif</span>
+          <strong>
+            ${walletLoading ? "..." : formatSawitDollar(walletBalance)}
+          </strong>
+          <small>Setara {formatRupiah(walletBalance * SAWIT_DOLLAR_RATE)}</small>
+          <Link className="mobile-topup-pill" href="/top-up">
+            <Plus size={22} />
+            Top Up Saldo
+          </Link>
+          <Sprout aria-hidden="true" className="mobile-balance-watermark" />
           {walletError && <p className="inline-error">{walletError}</p>}
-          <div className="hero-actions">
-            <Link className="white-action" href="/top-up">
-              <PlusCircle size={24} />
-              Top Up Saldo
-            </Link>
-            <Link className="outline-action" href="/payroll">
-              <Send size={24} />
-              Kirim Dana
-            </Link>
-          </div>
         </div>
 
-        <div className="side-stat-stack">
-          <MetricCard
-            description="65% dari limit anggaran operasional"
-            icon={<TrendingUp />}
-            progress={65}
-            title="Total Pengeluaran Bulan Ini"
-            value={formatRupiah(totalAcceptedAmount * SAWIT_DOLLAR_RATE)}
-            variant="peach"
-          />
-          <MetricCard
-            description="Selesaikan sekarang"
-            icon={<UserPlus />}
-            title="Pembayaran Payroll Tertunda"
-            value={`${pendingCount} Laporan`}
-            variant="mint"
-          />
+        <div className="mobile-wallet-metrics">
+          <article>
+            <TrendingUp size={20} />
+            <span>Pengeluaran</span>
+            <strong>{formatCompactRupiah(totalAcceptedAmount * SAWIT_DOLLAR_RATE)}</strong>
+            <small>Bulan ini</small>
+          </article>
+          <article>
+            <TrendingUp size={20} />
+            <span>Top-Up</span>
+            <strong>{formatCompactRupiah(walletBalance * SAWIT_DOLLAR_RATE)}</strong>
+            <small>Bulan ini</small>
+          </article>
         </div>
-      </section>
 
-      <section className="panel transaction-panel">
-        <div className="panel-toolbar">
+        <div className="mobile-section-heading">
           <h2>Riwayat Transaksi</h2>
-          <div className="toolbar-controls">
-            <div className="segmented">
-              <button className="active" type="button">
-                Semua
-              </button>
-              <button type="button">Top-Up</button>
-              <button type="button">Payroll</button>
-            </div>
-            <label className="date-pill">
-              <Search size={16} />
-              <input
-                placeholder="Cari transaksi..."
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-              />
-            </label>
-            <button className="square-button" type="button">
-              <Filter size={21} />
-            </button>
-          </div>
+          <Link href="/payroll">Lihat Semua</Link>
+        </div>
+
+        <div className="mobile-chip-row">
+          <button className="active" type="button">Semua</button>
+          <button type="button">Top-Up</button>
+          <button type="button">Payroll Buruh</button>
+          <button type="button">Operasional</button>
         </div>
 
         <ResponsivePayrollTable
-          emptyText="Tidak ada transaksi pembayaran."
+          emptyText="Belum ada transaksi."
           loading={payrollLoading}
           error={payrollError}
           onApprovePayroll={onApprovePayroll}
@@ -1020,20 +1077,109 @@ function DashboardPage({
           pendingAction={pendingAction}
           showActionsAsMenu
         />
-
-        <div className="table-footer">
-          <span>
-            Menampilkan 1-{Math.min(4, payrolls.length)} dari {payrolls.length} transaksi
-          </span>
-          <Pagination />
-        </div>
-
-        <div className="dashboard-counts">
-          <span>{acceptedCount} selesai</span>
-          <span>{pendingCount} menunggu</span>
-          <span>{rejectedCount} ditolak</span>
-        </div>
       </section>
+
+      <div className="desktop-payment-view">
+        <section className="dashboard-hero-grid">
+          <div className="balance-card">
+            <div className="balance-card-top">
+              <span className="balance-kicker">
+                <Landmark size={28} />
+                Saldo Dompet Admin
+              </span>
+              <span className="status-chip green">Aktif</span>
+            </div>
+            <div className="balance-value">
+              <span>$</span>
+              {walletLoading ? "..." : formatSawitDollar(walletBalance)}
+            </div>
+            <p>
+              Setara <strong>{formatRupiah(walletBalance * SAWIT_DOLLAR_RATE)}</strong>
+              <Info size={15} />
+            </p>
+            {walletError && <p className="inline-error">{walletError}</p>}
+            <div className="hero-actions">
+              <Link className="white-action" href="/top-up">
+                <PlusCircle size={24} />
+                Top Up Saldo
+              </Link>
+              <Link className="outline-action" href="/payroll">
+                <Send size={24} />
+                Kirim Dana
+              </Link>
+            </div>
+          </div>
+
+          <div className="side-stat-stack">
+            <MetricCard
+              description="65% dari limit anggaran operasional"
+              icon={<TrendingUp />}
+              progress={65}
+              title="Total Pengeluaran Bulan Ini"
+              value={formatRupiah(totalAcceptedAmount * SAWIT_DOLLAR_RATE)}
+              variant="peach"
+            />
+            <MetricCard
+              description="Selesaikan sekarang"
+              icon={<UserPlus />}
+              title="Pembayaran Payroll Tertunda"
+              value={`${pendingCount} Laporan`}
+              variant="mint"
+            />
+          </div>
+        </section>
+
+        <section className="panel transaction-panel">
+          <div className="panel-toolbar">
+            <h2>Riwayat Transaksi</h2>
+            <div className="toolbar-controls">
+              <div className="segmented">
+                <button className="active" type="button">
+                  Semua
+                </button>
+                <button type="button">Top-Up</button>
+                <button type="button">Payroll</button>
+              </div>
+              <label className="date-pill">
+                <Search size={16} />
+                <input
+                  placeholder="Cari transaksi..."
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </label>
+              <button className="square-button" type="button">
+                <Filter size={21} />
+              </button>
+            </div>
+          </div>
+
+          <ResponsivePayrollTable
+            emptyText="Tidak ada transaksi pembayaran."
+            loading={payrollLoading}
+            error={payrollError}
+            onApprovePayroll={onApprovePayroll}
+            onOpenDetail={onOpenDetail}
+            onOpenReject={onOpenReject}
+            payrolls={payrolls.slice(0, 4)}
+            pendingAction={pendingAction}
+            showActionsAsMenu
+          />
+
+          <div className="table-footer">
+            <span>
+              Menampilkan 1-{Math.min(4, payrolls.length)} dari {payrolls.length} transaksi
+            </span>
+            <Pagination />
+          </div>
+
+          <div className="dashboard-counts">
+            <span>{acceptedCount} selesai</span>
+            <span>{pendingCount} menunggu</span>
+            <span>{rejectedCount} ditolak</span>
+          </div>
+        </section>
+      </div>
     </>
   );
 }
@@ -1057,6 +1203,11 @@ function TarifPage({
   setForm: React.Dispatch<React.SetStateAction<WageConfigForm>>;
   wageConfig: WageConfig | null;
 }) {
+  const simulationWeight = 50;
+  const buruhWage = Number(form.buruhWagePerKg) || 0;
+  const supirWage = Number(form.supirTrukWagePerKg) || 0;
+  const mandorWage = Number(form.mandorWagePerKg) || 0;
+
   return (
     <section>
       <PageTitle
@@ -1069,10 +1220,10 @@ function TarifPage({
           <Info size={22} />
         </span>
         <div>
-          <p>Rumus Kalkulasi Otomatis</p>
-          <strong>Upah final = Tarif/Kg × Kilogram × 90%</strong>
+          <p>Formula Perhitungan</p>
+          <strong>Upah dihitung berdasarkan total berat panen (Kg) dikalikan dengan tarif peran masing-masing.</strong>
           <span>
-            Potongan 10% dialokasikan untuk biaya operasional dan administrasi sistem.
+            Perubahan akan berlaku untuk periode payroll berikutnya.
           </span>
         </div>
       </div>
@@ -1080,28 +1231,47 @@ function TarifPage({
       {loading && <p className="muted-state">Memuat tarif...</p>}
       {error && <p className="error-state">{error}</p>}
 
-      <form className="wage-grid" onSubmit={onSubmit}>
+      <form className="wage-grid" id="wage-config-form" onSubmit={onSubmit}>
         <WageCard
           icon={<Briefcase />}
-          label="Buruh Panen"
+          label="Buruh"
           name="buruhWagePerKg"
           setForm={setForm}
           value={form.buruhWagePerKg}
         />
         <WageCard
           icon={<Truck />}
-          label="Supir Truk"
+          label="Supir"
           name="supirTrukWagePerKg"
           setForm={setForm}
           value={form.supirTrukWagePerKg}
         />
         <WageCard
           icon={<Sprout />}
-          label="Mandor Lapangan"
+          label="Mandor"
           name="mandorWagePerKg"
           setForm={setForm}
           value={form.mandorWagePerKg}
         />
+
+        <div className="wage-simulation-card">
+          <h2>Simulasi Upah</h2>
+          <p>Perkiraan biaya berdasarkan input tarif saat ini</p>
+          <dl>
+            <div>
+              <dt>Contoh Berat Panen</dt>
+              <dd>{simulationWeight} Kg</dd>
+            </div>
+            <div>
+              <dt>Estimasi Upah Buruh</dt>
+              <dd>{formatRupiah(buruhWage * simulationWeight)}</dd>
+            </div>
+            <div>
+              <dt>Total Operasional (B+S+M)</dt>
+              <dd>{formatRupiah((buruhWage + supirWage + mandorWage) * simulationWeight)}</dd>
+            </div>
+          </dl>
+        </div>
 
         <div className="form-actions wide">
           <button className="ghost-button" type="button" onClick={onCancel}>
@@ -1129,6 +1299,7 @@ function PayrollAdminPage({
   applyFilters,
   endDate,
   onApprovePayroll,
+  onCreatePayroll,
   onOpenDetail,
   onOpenReject,
   payrollError,
@@ -1154,6 +1325,7 @@ function PayrollAdminPage({
   applyFilters: (event?: FormEvent<HTMLFormElement>) => void;
   endDate: string;
   onApprovePayroll: (payroll: Payroll) => Promise<void>;
+  onCreatePayroll: () => void;
   onOpenDetail: (payroll: Payroll) => void;
   onOpenReject: (payroll: Payroll) => void;
   payrollError: string;
@@ -1296,6 +1468,15 @@ function PayrollAdminPage({
           <Pagination active={1} />
         </div>
       </section>
+
+      <button
+        aria-label="Buat payroll baru"
+        className="mobile-fab"
+        type="button"
+        onClick={onCreatePayroll}
+      >
+        <Plus size={36} />
+      </button>
     </section>
   );
 }
@@ -1319,6 +1500,16 @@ function TopUpPage({
 }) {
   const amountSawitDollar = Number(amount) || 0;
   const amountRupiah = amountSawitDollar * SAWIT_DOLLAR_RATE;
+  const appendAmountInput = (value: string) => {
+    if (value === "." && amount.includes(".")) {
+      return;
+    }
+
+    onAmountChange(amount === "0" ? value : `${amount}${value}`);
+  };
+  const deleteAmountInput = () => {
+    onAmountChange(amount.length <= 1 ? "0" : amount.slice(0, -1));
+  };
 
   return (
     <section className="topup-page">
@@ -1327,9 +1518,75 @@ function TopUpPage({
         Kembali ke Ringkasan
       </Link>
 
+      <form className="mobile-topup-view" onSubmit={onSubmit}>
+        <label className="mobile-user-target">
+          User ID tujuan
+          <input
+            value={userId}
+            onChange={(event) => setUserId(event.target.value)}
+            placeholder="UUID user tujuan"
+          />
+        </label>
+
+        <div className="mobile-topup-amount">
+          <strong>
+            <span>$</span>
+            {formatSawitDollar(amountSawitDollar)}
+          </strong>
+          <small>≈ {formatRupiah(amountRupiah)}</small>
+        </div>
+
+        <div className="amount-presets mobile-presets">
+          {[50, 100, 500, 1000].map((preset) => (
+            <button
+              className={Number(amount) === preset ? "selected" : ""}
+              key={preset}
+              type="button"
+              onClick={() => onAmountChange(String(preset))}
+            >
+              $ {preset}
+            </button>
+          ))}
+        </div>
+
+        <div className="exchange-box mobile-exchange">
+          <Info size={24} />
+          <span>
+            <strong>Nilai Tukar Saat Ini</strong>
+            1 SawitDollar = Rp 10.000
+          </span>
+        </div>
+
+        <div className="mobile-keypad" aria-label="Keypad nominal top up">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((key) => (
+            <button key={key} type="button" onClick={() => appendAmountInput(key)}>
+              {key}
+            </button>
+          ))}
+          <button aria-label="Hapus angka" type="button" onClick={deleteAmountInput}>
+            <XCircle size={24} />
+          </button>
+        </div>
+
+        <button
+          className="payment-submit mobile-payment-submit"
+          disabled={pendingAction === "top-up"}
+          type="submit"
+        >
+          {pendingAction === "top-up" ? "Memproses..." : "Lanjut ke Pembayaran"}
+          <span />
+        </button>
+
+        {result?.paymentUrl && (
+          <a className="payment-url" href={result.paymentUrl} rel="noreferrer" target="_blank">
+            Buka link pembayaran
+          </a>
+        )}
+      </form>
+
       <div className="topup-grid">
         <div>
-          <form className="panel topup-card" id="topup-form" onSubmit={onSubmit}>
+          <form className="panel topup-card" id="topup-form-desktop" onSubmit={onSubmit}>
             <h1>Isi Saldo SawitDollar</h1>
             <p>Tambahkan saldo untuk mempermudah transaksi operasional kebun Anda.</p>
 
@@ -1407,7 +1664,7 @@ function TopUpPage({
           <button
             className="payment-submit"
             disabled={pendingAction === "top-up"}
-            form="topup-form"
+            form="topup-form-desktop"
             type="submit"
           >
             {pendingAction === "top-up" ? "Memproses..." : "Lanjut ke Pembayaran"}
@@ -1434,6 +1691,7 @@ function PayrollSayaPage({
   applyFilters,
   endDate,
   onStatusChange,
+  onOpenDetail,
   payrollError,
   payrollLoading,
   payrolls,
@@ -1448,6 +1706,7 @@ function PayrollSayaPage({
   applyFilters: (event?: FormEvent<HTMLFormElement>) => void;
   endDate: string;
   onStatusChange: (value: "ALL" | PayrollStatus) => void;
+  onOpenDetail: (payroll: Payroll) => void;
   payrollError: string;
   payrollLoading: boolean;
   payrolls: Payroll[];
@@ -1469,7 +1728,7 @@ function PayrollSayaPage({
 
       <div className="my-payroll-summary">
         <div className="income-card">
-          <span>Total Akumulasi Pendapatan</span>
+          <span>SALDO WALLET</span>
           <div className="income-main">
             <strong>${formatSawitDollar(walletBalance)}</strong>
             <em>SawitDollar</em>
@@ -1482,9 +1741,9 @@ function PayrollSayaPage({
             </span>
             <span>
               Berat Panen <strong>{formatKg(totalHarvestKg)}</strong>
-            </span>
-            <button type="button">Tarik Saldo</button>
-          </div>
+          </span>
+          <button type="button">Tarik Saldo</button>
+        </div>
         </div>
         <div className="bank-card">
           <span className="bank-icon">
@@ -1542,7 +1801,7 @@ function PayrollSayaPage({
           <div className="empty-card">Belum ada payroll untuk ditampilkan.</div>
         )}
         {payrolls.map((payroll) => (
-          <MyPayrollItem key={payroll.id} payroll={payroll} />
+          <MyPayrollItem key={payroll.id} payroll={payroll} onOpenDetail={onOpenDetail} />
         ))}
       </div>
 
@@ -1630,14 +1889,19 @@ function WageCard({
   setForm: React.Dispatch<React.SetStateAction<WageConfigForm>>;
   value: string;
 }) {
+  const numericValue = Number(value) || 0;
+
   return (
     <article className="wage-card">
       <div className="wage-card-top">
-        <span className="metric-icon mint">{icon}</span>
-        <span className="role-badge">{label}</span>
+        <span className="wage-title">
+          <span className="metric-icon mint">{icon}</span>
+          <strong>{label}</strong>
+        </span>
+        <span className="role-badge">Rp {formatNumber(numericValue)}/Kg</span>
       </div>
       <label>
-        Upah per Kg
+        Tarif Per Kilogram
         <span className="rupiah-input">
           Rp
           <input
@@ -1652,10 +1916,6 @@ function WageCard({
           />
         </span>
       </label>
-      <p>
-        <RefreshCw size={15} />
-        Saat ini: Rp {formatNumber(Number(value) || 0)}/Kg
-      </p>
     </article>
   );
 }
@@ -1690,111 +1950,178 @@ function ResponsivePayrollTable({
   }
 
   return (
-    <div className="table-scroll">
-      <table className="payment-table">
-        <thead>
-          <tr>
-            <th>
-              <input aria-label="Pilih semua" type="checkbox" />
-            </th>
-            <th>Nama Penerima</th>
-            <th>Tanggal</th>
-            <th>Kilogram</th>
-            <th>Upah (SawitDollar)</th>
-            <th>Status</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {payrolls.length === 0 && (
+    <>
+      <div className={`mobile-payroll-cards ${showActionsAsMenu ? "transaction" : "admin"}`}>
+        {payrolls.length === 0 && <div className="empty-card">{emptyText}</div>}
+        {payrolls.map((payroll) => (
+          <button
+            className={`mobile-payroll-card ${statusClass(payroll.status)}`}
+            key={payroll.id}
+            type="button"
+            onClick={() => onOpenDetail(payroll)}
+          >
+            <span
+              aria-hidden="true"
+              className="mobile-card-avatar"
+              style={
+                showActionsAsMenu
+                  ? undefined
+                  : { backgroundImage: `url(${avatarUrl(payroll.userId)})` }
+              }
+            >
+              {showActionsAsMenu &&
+                (payroll.amount >= 0 ? <Banknote size={25} /> : <CreditCard size={25} />)}
+            </span>
+            <span className="mobile-card-copy">
+              <strong>
+                {showActionsAsMenu
+                  ? payroll.description || `Payroll ${roleLabel(payroll.userRole)}`
+                  : formatUserLabel(payroll.userId)}
+              </strong>
+              <small>
+                {formatDate(payroll.createdAt)}
+                {showActionsAsMenu ? ` • ${formatTime(payroll.createdAt).replace(" WIB", "")}` : ""}
+              </small>
+              {!showActionsAsMenu && (
+                <em>
+                  <Sprout size={17} />
+                  {formatKg(payroll.kilogram)}
+                </em>
+              )}
+            </span>
+            <span className="mobile-card-side">
+              <strong>{payroll.status === "ACCEPTED" ? "+" : "-"}$ {formatSawitDollar(payroll.amount)}</strong>
+              <small className={`status-pill ${statusClass(payroll.status)}`}>
+                {statusLabel(payroll.status)}
+              </small>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="table-scroll">
+        <table className="payment-table">
+          <thead>
             <tr>
-              <td colSpan={7}>{emptyText}</td>
+              <th>
+                <input aria-label="Pilih semua" type="checkbox" />
+              </th>
+              <th>Nama Penerima</th>
+              <th>Tanggal</th>
+              <th>Kilogram</th>
+              <th>Upah (SawitDollar)</th>
+              <th>Status</th>
+              <th>Aksi</th>
             </tr>
-          )}
-          {payrolls.map((payroll) => (
-            <tr key={payroll.id}>
-              <td>
-                <input aria-label={`Pilih payroll ${payroll.id}`} type="checkbox" />
-              </td>
-              <td>
-                <div className="person-cell">
-                  <span
-                    aria-hidden="true"
-                    className="avatar"
-                    style={{ backgroundImage: `url(${avatarUrl(payroll.userId)})` }}
-                  />
-                  <span>
-                    <strong>{formatUserLabel(payroll.userId)}</strong>
-                    <small>{roleLabel(payroll.userRole)}</small>
-                  </span>
-                </div>
-              </td>
-              <td>{formatDate(payroll.createdAt)}</td>
-              <td>{formatKg(payroll.kilogram)}</td>
-              <td>
-                <strong>$ {formatSawitDollar(payroll.amount)}</strong>
-                <small>{formatRupiah(payroll.amount * SAWIT_DOLLAR_RATE)}</small>
-              </td>
-              <td>
-                <span className={`status-pill ${statusClass(payroll.status)}`}>
-                  {statusLabel(payroll.status)}
-                </span>
-              </td>
-              <td>
-                {showActionsAsMenu ? (
-                  <button
-                    aria-label="Lihat detail"
-                    className="icon-only"
-                    type="button"
-                    onClick={() => onOpenDetail(payroll)}
-                  >
-                    <MoreVertical />
-                  </button>
-                ) : payroll.status === "PENDING" ? (
-                  <div className="row-actions">
-                    <button
-                      aria-label="Setujui payroll"
-                      className="approve"
-                      disabled={pendingAction === `approve-${payroll.id}`}
-                      type="button"
-                      onClick={() => void onApprovePayroll(payroll)}
-                    >
-                      <Check />
-                    </button>
-                    <button
-                      aria-label="Tolak payroll"
-                      className="reject"
-                      type="button"
-                      onClick={() => onOpenReject(payroll)}
-                    >
-                      <X />
-                    </button>
+          </thead>
+          <tbody>
+            {payrolls.length === 0 && (
+              <tr>
+                <td colSpan={7}>{emptyText}</td>
+              </tr>
+            )}
+            {payrolls.map((payroll) => (
+              <tr key={payroll.id}>
+                <td>
+                  <input aria-label={`Pilih payroll ${payroll.id}`} type="checkbox" />
+                </td>
+                <td>
+                  <div className="person-cell">
+                    <span
+                      aria-hidden="true"
+                      className="avatar"
+                      style={{ backgroundImage: `url(${avatarUrl(payroll.userId)})` }}
+                    />
+                    <span>
+                      <strong>{formatUserLabel(payroll.userId)}</strong>
+                      <small>{roleLabel(payroll.userRole)}</small>
+                    </span>
                   </div>
-                ) : (
-                  <button
-                    aria-label="Lihat detail"
-                    className="icon-only"
-                    type="button"
-                    onClick={() => onOpenDetail(payroll)}
-                  >
-                    <Eye />
-                  </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                </td>
+                <td>{formatDate(payroll.createdAt)}</td>
+                <td>{formatKg(payroll.kilogram)}</td>
+                <td>
+                  <strong>$ {formatSawitDollar(payroll.amount)}</strong>
+                  <small>{formatRupiah(payroll.amount * SAWIT_DOLLAR_RATE)}</small>
+                </td>
+                <td>
+                  <span className={`status-pill ${statusClass(payroll.status)}`}>
+                    {statusLabel(payroll.status)}
+                  </span>
+                </td>
+                <td>
+                  {showActionsAsMenu ? (
+                    <button
+                      aria-label="Lihat detail"
+                      className="icon-only"
+                      type="button"
+                      onClick={() => onOpenDetail(payroll)}
+                    >
+                      <MoreVertical />
+                    </button>
+                  ) : payroll.status === "PENDING" ? (
+                    <div className="row-actions">
+                      <button
+                        aria-label="Setujui payroll"
+                        className="approve"
+                        disabled={pendingAction === `approve-${payroll.id}`}
+                        type="button"
+                        onClick={() => void onApprovePayroll(payroll)}
+                      >
+                        <Check />
+                      </button>
+                      <button
+                        aria-label="Tolak payroll"
+                        className="reject"
+                        type="button"
+                        onClick={() => onOpenReject(payroll)}
+                      >
+                        <X />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      aria-label="Lihat detail"
+                      className="icon-only"
+                      type="button"
+                      onClick={() => onOpenDetail(payroll)}
+                    >
+                      <Eye />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 
-function MyPayrollItem({ payroll }: { payroll: Payroll }) {
+function MyPayrollItem({
+  onOpenDetail,
+  payroll,
+}: {
+  onOpenDetail?: (payroll: Payroll) => void;
+  payroll: Payroll;
+}) {
   const rejected = payroll.status === "REJECTED";
   const day = new Date(payroll.createdAt);
 
   return (
-    <article className={`my-payroll-item ${rejected ? "rejected" : ""}`}>
+    <article
+      className={`my-payroll-item ${rejected ? "rejected" : ""} ${onOpenDetail ? "clickable" : ""}`}
+      role={onOpenDetail ? "button" : undefined}
+      tabIndex={onOpenDetail ? 0 : undefined}
+      onClick={() => onOpenDetail?.(payroll)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpenDetail?.(payroll);
+        }
+      }}
+    >
       <div className="payroll-day">
         <span>{day.toLocaleDateString("id-ID", { month: "short" })}</span>
         <strong>{Number.isNaN(day.getTime()) ? "--" : day.getDate()}</strong>
@@ -1915,8 +2242,41 @@ function PayrollDetailModal({
   payroll: Payroll;
   pendingAction: string | null;
 }) {
+  const grossAmount = payroll.amount / 0.9;
+  const qualityAdjustment = grossAmount - payroll.amount;
+
   return (
     <Modal title="Detail Payroll" onClose={onClose}>
+      <div className="mobile-detail-profile">
+        <span
+          aria-hidden="true"
+          className="avatar"
+          style={{ backgroundImage: `url(${avatarUrl(payroll.userId)})` }}
+        />
+        <div>
+          <h3>{formatUserLabel(payroll.userId)}</h3>
+          <p>
+            <span className="status-chip green">{roleLabel(payroll.userRole)}</span>
+            PR-{payroll.id.slice(0, 8)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mobile-detail-status">
+        <span>Status Pengajuan</span>
+        <strong className={`status-pill ${statusClass(payroll.status)}`}>
+          {statusLabel(payroll.status)}
+        </strong>
+      </div>
+
+      <div className="mobile-detail-amount">
+        <span>Upah Final</span>
+        <strong>
+          {formatRupiah(payroll.amount * SAWIT_DOLLAR_RATE)}
+          <em>(${formatSawitDollar(payroll.amount)})</em>
+        </strong>
+      </div>
+
       <dl className="detail-list">
         <div>
           <dt>Penerima</dt>
@@ -1943,6 +2303,35 @@ function PayrollDetailModal({
           <dd>{payroll.rejectionReason || "-"}</dd>
         </div>
       </dl>
+      <div className="mobile-calculation-card">
+        <h3>Rincian Perhitungan</h3>
+        <dl>
+          <div>
+            <dt>Tarif Dasar (per Kg)</dt>
+            <dd>{formatRupiah((payroll.amount * SAWIT_DOLLAR_RATE) / Math.max(payroll.kilogram, 1))}</dd>
+          </div>
+          <div>
+            <dt>Total Hasil Panen</dt>
+            <dd>{formatKg(payroll.kilogram)}</dd>
+          </div>
+          <div>
+            <dt>Subtotal Bruto</dt>
+            <dd>{formatRupiah(grossAmount * SAWIT_DOLLAR_RATE)}</dd>
+          </div>
+          <div>
+            <dt>Faktor Kualitas (90%)</dt>
+            <dd>- {formatRupiah(qualityAdjustment * SAWIT_DOLLAR_RATE)}</dd>
+          </div>
+          <div>
+            <dt>Total Bersih</dt>
+            <dd>{formatRupiah(payroll.amount * SAWIT_DOLLAR_RATE)}</dd>
+          </div>
+        </dl>
+      </div>
+      <div className="mobile-description-card">
+        <span>Deskripsi</span>
+        <p>{payroll.description || "Tidak ada deskripsi tambahan."}</p>
+      </div>
       {payroll.status === "PENDING" && (
         <div className="modal-actions">
           <button
@@ -2169,6 +2558,18 @@ function formatRupiah(value: number) {
     maximumFractionDigits: 0,
     style: "currency",
   }).format(value);
+}
+
+function formatCompactRupiah(value: number) {
+  if (Math.abs(value) >= 1000000) {
+    return `Rp ${formatSawitDollar(value / 1000000)}M`;
+  }
+
+  if (Math.abs(value) >= 1000) {
+    return `Rp ${formatSawitDollar(value / 1000)}rb`;
+  }
+
+  return formatRupiah(value);
 }
 
 function formatKg(value: number) {
