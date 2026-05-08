@@ -4,7 +4,7 @@ export async function POST(req: Request) {
     const { searchParams } = new URL(req.url);
     const msg = searchParams.get("msg") ?? "hello";
 
-    const base = process.env.PEMBAYARAN_BACKEND_URL ?? "http://localhost:8085";
+    const base = process.env.NEXT_PUBLIC_PEMBAYARAN_API_URL ?? "https://mysawit-backend-manage-pembayaran.onrender.com";
     const res = await fetch(`${base}/api/db-ping?msg=${encodeURIComponent(msg)}`, {
         method: "POST",
         cache: "no-store",
