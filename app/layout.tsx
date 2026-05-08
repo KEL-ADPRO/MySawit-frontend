@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MySawit Pembayaran",
-  description: "Panel manajemen pembayaran MySawit",
+  title: "MySawit Portal",
+  description: "Panel manajemen pembayaran dan kebun MySawit",
 };
 
 export default function RootLayout({
