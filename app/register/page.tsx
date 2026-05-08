@@ -35,8 +35,8 @@ export default function RegisterPage() {
 
       if (response.ok && result.success) {
         localStorage.setItem("token", result.data.token);
-        setMessage("Registrasi berhasil! Selamat datang, " + result.data.name);
-        router.push("/dashboard");
+        setMessage("Registrasi berhasil!");
+        router.push("/login");
       } else {
         setMessage("Registrasi gagal: " + (result.message || "Coba lagi."));
       }
