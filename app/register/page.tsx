@@ -25,7 +25,14 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8081/api/auth/register", {
+      let registerAPI;
+      if (process.env.DEBUG === "true") {  
+        registerAPI = "http://localhost:8081/api/auth/register";
+      } else {
+        registerAPI = "https://mysawit-backend-auth.onrender.com/api/auth/register";
+      }
+
+      const response = await fetch(registerAPI, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

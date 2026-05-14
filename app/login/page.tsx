@@ -15,7 +15,14 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8081/api/auth/login", {
+      let loginAPI;
+      if (process.env.DEBUG === "true") {  
+        loginAPI = "http://localhost:8081/api/auth/login";
+      } else {
+        loginAPI = "https://mysawit-backend-auth.onrender.com/api/auth/login";
+      }
+
+      const response = await fetch(loginAPI, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
