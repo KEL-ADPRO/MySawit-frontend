@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAuthBaseUrl } from "@/lib/authApi";
+import { saveSession } from "@/lib/session";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,14 +27,7 @@ export default function RegisterPage() {
     setMessage("");
 
     try {
-      let registerAPI;
-      if (process.env.DEBUG === "true") {  
-        registerAPI = "http://localhost:8081/api/auth/register";
-      } else {
-        registerAPI = "https://mysawit-backend-auth.onrender.com/api/auth/register";
-      }
-
-      const response = await fetch(registerAPI, {
+      const response = await fetch(`${getAuthBaseUrl()}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -41,7 +36,10 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        localStorage.setItem("token", result.data.token);
+        const { token, userId, name, role } = result.data;
+
+        saveSession({ token, userId: userId.toString(), role, name });
+
         setMessage("Registrasi berhasil!");
         router.push("/login");
       } else {
