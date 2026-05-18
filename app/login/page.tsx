@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getAuthBaseUrl } from "@/lib/authApi";
+import { saveSession } from "@/lib/session";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,14 +17,7 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      let loginAPI;
-      if (process.env.DEBUG === "true") {  
-        loginAPI = "http://localhost:8081/api/auth/login";
-      } else {
-        loginAPI = "https://mysawit-backend-auth.onrender.com/api/auth/login";
-      }
-
-      const response = await fetch(loginAPI, {
+      const response = await fetch(`${getAuthBaseUrl()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -31,9 +26,18 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        localStorage.setItem("token", result.data.token);
-        setMessage("Login berhasil! Selamat datang, " + result.data.name);
-        router.push("/");
+        const { token, userId, name, role } = result.data;
+
+        saveSession({ token, userId: userId.toString(), role, name });
+
+        setMessage("Login berhasil! Selamat datang, " + name);
+
+        // Route based on role
+        if (role === "MANDOR") {
+          router.push("/harvest/pending");
+        } else {
+          router.push("/harvest/submit");
+        }
       } else {
         setMessage("Login gagal: " + (result.message || "Email atau password salah."));
       }
